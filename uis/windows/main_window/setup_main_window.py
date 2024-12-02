@@ -6,6 +6,7 @@ from import_core import *
 
 from widgets.py_table_widget.py_table_widget import PyTableWidget
 from . functions_main_window import *
+from . functions_video import *
 from core.json_settings import Settings
 from core.json_themes import Themes
 from widgets import *
@@ -301,6 +302,18 @@ class SetupMainWindow:
                                      u"background: transparent;}")
         self.l_preview.setGeometry(0, 0, self.width() / 2, self.width() / 2)
 
+        self.l_camera_fps = QLabel()
+        self.l_camera_fps.setObjectName(u"l_camera_fps")
+        self.l_camera_fps.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.l_camera_fps.setGeometry(0, 0, 50, 25)
+        self.l_camera_fps.setStyleSheet(u"QLabel{"
+                                         u"background: transparent;"
+                                         u"color: #B1E856;"
+                                         u"font-family: 'Roboto';"
+                                         u"font-size: 14px;"
+                                         u"font-style: normal;"
+                                         u"font-weight: 400;}")
+
         self.view.setMouseTracking(True)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -311,6 +324,13 @@ class SetupMainWindow:
         self.proxy_wid_preview = QGraphicsProxyWidget()
         self.proxy_wid_preview.setWidget(self.l_preview)
         self.scene.addItem(self.proxy_wid_preview)
+
+        VideoFunctions.setup_video_processing(self)
+
+        self.proxy_wid_l_camera_fps = QGraphicsProxyWidget()
+        self.proxy_wid_l_camera_fps.setWidget(self.l_camera_fps)
+        self.proxy_wid_l_camera_fps.setPos(QPoint(self.scene.sceneRect().width() - self.l_camera_fps.width() - 10, 5))
+        self.scene.addItem(self.proxy_wid_l_camera_fps)
 
 
         # TABLE WIDGETS

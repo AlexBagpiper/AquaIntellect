@@ -6,6 +6,7 @@ from import_core import *
 
 from core.json_settings import Settings
 from uis.windows.main_window.functions_main_window import *
+from uis.windows.main_window.functions_video import *
 from uis.windows.main_window import *
 from widgets import *
 
@@ -24,6 +25,7 @@ class MainWindow(QMainWindow):
         # SETUP VALUES
         # ///////////////////////////////////////////////////////////////
         self.current_pool = {'id': None, 'name': None}
+        self.current_camera = None
 
         # LOAD SETTINGS
         # ///////////////////////////////////////////////////////////////
@@ -140,19 +142,40 @@ class MainWindow(QMainWindow):
         btn = SetupMainWindow.setup_btns(self)
 
         # DEBUG
-        #print(f"Button {btn.objectName()}, released!")
+        print(f"Button {btn.objectName()}, released!")
 
     # RESIZE EVENT
     # ///////////////////////////////////////////////////////////////
     def resizeEvent(self, event):
         SetupMainWindow.resize_grips(self)
 
+    def closeEvent(self, event):
+        VideoFunctions.stop_video_processing_thread(self)
+        if self.camera and self.camera.isOpened():
+            self.camera.release()
+        event.accept()
 
     # MOUSE CLICK EVENTS
     # ///////////////////////////////////////////////////////////////
     def mousePressEvent(self, event):
         # SET DRAG POS WINDOW
         self.dragPos = event.globalPos()
+
+
+    '''def paintEvent(self, event):
+        if not self.view.sceneRect().isNull() and self.resize_flag:
+            self.view.fitInView(self.scene.sceneRect(), Qt.IgnoreAspectRatio)
+            self.resize_flag = False
+        path = QPainterPath()
+        # the rectangle must be translated and adjusted by 1 pixel in order to
+        # correctly map the rounded shape
+        rect = QRectF(self.view.rect()).adjusted(4.5, 4.5, -4.5, -4.5)
+        path.addRoundedRect(rect, self.view_finder_radius, self.view_finder_radius, Qt.AbsoluteSize)
+        # QRegion is bitmap based, so the returned QPolygonF (which uses float
+        # values must be transformed to an integer based QPolygon
+        region = QRegion(path.toFillPolygon(QTransform()).toPolygon())
+        self.view.setMask(region)
+        if self.frameGeometry().center() != self.frameGeometry().center(): self.center()'''
 
 
 # SETTINGS WHEN TO START

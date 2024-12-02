@@ -34,6 +34,10 @@ class VideoGetThread(QThread):
         super().__init__(parent)
         self.stream = parent.camera
         self.scaled_size = None
+        camera_roi = parent.current_camera['camera_roi']
+        if camera_roi:
+            camera_roi = json.loads(camera_roi)
+            self.scaled_size = [camera_roi['x'], camera_roi['y'], camera_roi['x'] + camera_roi['w'], camera_roi['y'] + camera_roi['h']]
         self.stopped = False
 
     def run(self):
@@ -54,48 +58,6 @@ class VideoGetThread(QThread):
     def stop(self):
         self.stopped = True
         self.stream.release()
-
-
-class VideoSampleThread(QThread):
-    status = Signal(object)
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.path = None
-        self.video = None
-        self.frame = None
-
-        self.stopped = False
-        self.restart = True
-
-    def run(self):
-        while self.video and self.video.isOpened() and not self.stopped:
-            try:
-                if time.perf_counter() - self.start_frame >= 1 / self.video_fps:
-                    (self.grabbed, frame) = self.video.read()
-                    if self.grabbed:
-                        self.frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                        self.status.emit(self.frame)
-                    self.start_frame = time.perf_counter()
-                    if self.video.get(cv2.CAP_PROP_POS_FRAMES) >= self.video.get(cv2.CAP_PROP_FRAME_COUNT) and self.restart:
-                        self.video.set(cv2.CAP_PROP_POS_FRAMES, 0.0)
-            except Exception as e:
-                self.stopped = True
-                print(e)
-        if self.stopped:
-            self.video.release()
-            self.stopped = False
-            self.video = None
-
-    def set_video(self, path):
-        if self.video and self.video.isOpened():
-            self.video.release()
-            self.stopped = False
-        self.path = path
-        self.video = cv2.VideoCapture(self.path)
-        self.video_fps = self.video.get(cv2.CAP_PROP_FPS)
-        self.start_frame = time.perf_counter()
-        return True
 
 
 class VideoWriteThread(QThread):
@@ -240,40 +202,32 @@ class OneEuroFilter:
 
 
 # FUNCTIONS
-class TaskWindowFunctions():
+class VideoFunctions():
     def __init__(self):
         super().__init__()
-
 
     def __del__(self):
         pass
 
-
-    def setup_video_processing(self, task_id):
+    def setup_video_processing(self):
         def camera_thread_rawFrame(frame):
-            TaskWindowFunctions.update_camera_thread(self, frame)
-
-        def video_sample_thread_status(frame):
-            TaskWindowFunctions.sample_preview(self, frame)
+            VideoFunctions.update_camera_thread(self, frame)
 
         def video_write_thread_status(writer_complete):
-            TaskWindowFunctions.video_write_thread_status(self, writer_complete)
+            VideoFunctions.video_write_thread_status(self, writer_complete)
 
         def recognize_thread_recognizedFrame(frame):
-            TaskWindowFunctions.recognize_thread_complete(self, frame, 'done')
+            VideoFunctions.recognize_thread_complete(self, frame, 'done')
 
         def recognize_thread_unrecognizedFrame(frame):
-            TaskWindowFunctions.recognize_thread_complete(self, frame, 'undone')
+            VideoFunctions.recognize_thread_complete(self, frame, 'undone')
 
-        TaskWindowFunctions.set_camera(self, 0)
-        self.scaled_size = (self.preview_size[0], self.preview_size[1])
+        VideoFunctions.set_camera(self)
+        #self.scaled_size = (self.preview_size[0], self.preview_size[1])
+        self.scaled_size = (600, 600)
         self.camera_thread = VideoGetThread(self)
         self.camera_thread.rawFrame.connect(camera_thread_rawFrame)
-        self.video_sample_thread = VideoSampleThread(self)
-        self.video_sample_thread.status.connect(video_sample_thread_status)
-        self.video_sample_thread.set_video(TaskWindowFunctions.get_sample_video_path(task_id))
-        self.video_sample_thread.start()
-        self.filter_camera_fps = OneEuroFilter(0.0, 0.0, min_cutoff=0.01, beta=0.01)
+        '''self.filter_camera_fps = OneEuroFilter(0.0, 0.0, min_cutoff=0.01, beta=0.01)
         self.filter_recognize_fps = OneEuroFilter(0.0, 0.0, min_cutoff=0.01, beta=0.01)
         self.video_write_thread = VideoWriteThread(self)
         self.video_write_thread.status.connect(video_write_thread_status)
@@ -282,71 +236,73 @@ class TaskWindowFunctions():
         #set 'cur_solution' depending of task
         self.recognize_thread = RecognizeThread(self, solution=self.cur_solution)
         self.recognize_thread.recognizedFrame.connect(recognize_thread_recognizedFrame)
-        self.recognize_thread.unrecognizedFrame.connect(recognize_thread_unrecognizedFrame)
+        self.recognize_thread.unrecognizedFrame.connect(recognize_thread_unrecognizedFrame)'''
         #self.camera_thread.rawFrame.connect(lambda: TaskWindowFunctions.update_camera_thread(self, self.camera_thread.frame))
         self.camera_thread.start()
         self.cam_frame_counter = 0
         self.recog_frame_counter = 0
 
 
-    def set_camera(self, num_camera):
-        if self.settings[f'camera_{num_camera}_setting']['number'] == -1 or num_camera > 2:
-            num_camera = 0
-        self.camera = cv2.VideoCapture(self.settings[f'camera_{num_camera}_setting']['number'], cv2.CAP_MSMF)
-        self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.settings[f'camera_{num_camera}_setting']['resolution'][0])
-        self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.settings[f'camera_{num_camera}_setting']['resolution'][1])
-        self.camera.set(cv2.CAP_PROP_FPS, self.settings[f'camera_{num_camera}_setting']['frame_rate'])
-        self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-        self.cur_camera_num = num_camera
+    def set_camera(self):
+        try:
+            if self.current_pool['id']:
+                data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
+                                                           table='cameras',
+                                                           where='pool_id',
+                                                           value=self.current_pool['id'])
 
+                if data[0] and data[1]:
+                    self.current_camera = data[1][0]
+                    self.camera = cv2.VideoCapture(self.current_camera['camera_address'])
+                    #self.camera.set(cv2.CAP_PROP_FRAME_WIDTH, self.settings[f'camera_{num_camera}_setting']['resolution'][0])
+                    #self.camera.set(cv2.CAP_PROP_FRAME_HEIGHT, self.settings[f'camera_{num_camera}_setting']['resolution'][1])
+                    #self.camera.set(cv2.CAP_PROP_FPS, self.settings[f'camera_{num_camera}_setting']['frame_rate'])
+                    #self.camera.set(cv2.CAP_PROP_BUFFERSIZE, 2)'''
+                    return True
+            return False
+        except Exception as e:
+            print(f'error set_camera: {e}')
+            return False
 
     def stop_video_processing_thread(self):
         self.camera_thread.stopped = True
         self.camera_thread.wait()
         self.camera.release()
-        self.recognize_thread.wait()
-        self.video_sample_thread.video.release()
-        self.video_sample_thread.wait()
-        self.cam_frame_counter = 0
-        self.recog_frame_counter = 0
+        #self.recognize_thread.wait()
+        #self.cam_frame_counter = 0
+        #self.recog_frame_counter = 0
 
 
     def change_camera(self):
-        TaskWindowFunctions.stop_video_processing_thread(self)
-        TaskWindowFunctions.set_camera(self, self.cur_camera_num + 1)
+        VideoFunctions.stop_video_processing_thread(self)
+        VideoFunctions.set_camera(self)
         self.camera_thread.stream = self.camera
         self.recognize_thread.stream = self.camera
         self.camera_thread.stopped = False
         self.camera_thread.start()
-        if hasattr(self, 'video_sample_thread'):
-            self.video_sample_thread.stopped = True
-            self.video_sample_thread.wait()
-            self.video_sample_thread.set_video(TaskWindowFunctions.get_sample_video_path(self.cur_task_id))
-            if not self.video_sample_thread.isRunning():
-                self.video_sample_thread.stopped = False
-                self.video_sample_thread.start()
-        self.cam_frame_counter = 0
-        self.recog_frame_counter = 0
+        #self.cam_frame_counter = 0
+        #self.recog_frame_counter = 0
 
 
     def update_preview(self, frame):
-        if self.start_rect_pos and self.scene_mouse_pos and self.pbtn_zoom.objectName() == 'zoom':
+        '''if self.start_rect_pos and self.scene_mouse_pos and self.pbtn_zoom.objectName() == 'zoom':
             self.scale_rectangle.setRect(QRectF(self.start_rect_pos, QSize(abs(self.scene_mouse_pos.x() - self.start_rect_pos.x()),
-                                                                           abs(self.scene_mouse_pos.y() - self.start_rect_pos.y()))))
+                                                                           abs(self.scene_mouse_pos.y() - self.start_rect_pos.y()))))'''
         scene_ratio = self.scene.sceneRect().width() / self.scene.sceneRect().height()
         h, w, _ = frame.shape
         frame_ratio = w / h
+        #self.l_preview.setPixmap(VideoFunctions.convert_cv_to_pixmap(frame).scaled(self.scene.sceneRect().width(), self.scene.sceneRect().width() / frame_ratio, Qt.KeepAspectRatio))
         if abs(scene_ratio - frame_ratio) / scene_ratio > 0.1:
-            self.l_preview.setPixmap(TaskWindowFunctions.convert_cv_to_pixmap(frame).scaled(1100, 600, Qt.KeepAspectRatio))
+            self.l_preview.setPixmap(VideoFunctions.convert_cv_to_pixmap(frame).scaled(self.scene.sceneRect().width(), self.scene.sceneRect().width() / frame_ratio, Qt.KeepAspectRatio))
         else:
-            self.l_preview.setPixmap(TaskWindowFunctions.convert_cv_to_pixmap(frame).scaled(1100, 600))
-        if hasattr(self, "start_recognize_timer"):
+            self.l_preview.setPixmap(VideoFunctions.convert_cv_to_pixmap(frame).scaled(self.scene.sceneRect().width(), self.scene.sceneRect().width() / frame_ratio))
+        '''if hasattr(self, "start_recognize_timer"):
             filtered_recognize_fps = self.filter_recognize_fps(time.perf_counter(), (1 / (time.perf_counter() - self.start_recognize_timer)))
             if self.grabbed == 'done':
                 self.l_recognize_fps.setText(f'FPS (распознавание): {int(filtered_recognize_fps)}')
             elif self.grabbed == 'undone':
                 self.l_recognize_fps.setText('FPS (распознавание):  - -')
-        self.start_recognize_timer = time.perf_counter()
+        self.start_recognize_timer = time.perf_counter()'''
 
 
     def convert_cv_to_pixmap(frame):
@@ -428,21 +384,22 @@ class TaskWindowFunctions():
 
 
     def update_camera_thread(self, frame):
-        TaskWindowFunctions.grab_data(self)
-        TaskWindowFunctions.video_recording(self, frame)
+        #VideoFunctions.grab_data(self)
+        #VideoFunctions.video_recording(self, frame)
         # save video with mask
         #self.raw_frame = frame
         # save video without mask
         self.raw_frame = frame.copy()
-        if self.grab_flag and not self.recognize_thread.isRunning():
+        VideoFunctions.update_preview(self, self.raw_frame)
+        '''if self.grab_flag and not self.recognize_thread.isRunning():
             self.recognize_thread.raw_frame = frame
             self.recognize_thread.stopped = False
             self.recognize_thread.start()
         elif not self.grab_flag and not self.recognize_thread.isRunning():
-            TaskWindowFunctions.update_preview(self, self.raw_frame)
+            VideoFunctions.update_preview(self, self.raw_frame)
         elif not self.grab_flag and self.recognize_thread.isRunning():
             self.recognize_thread.stopped = True
-            TaskWindowFunctions.update_preview(self, self.raw_frame)
+            VideoFunctions.update_preview(self, self.raw_frame)'''
         '''if hasattr(self, "start_camera_timer"):
             filtered_camera_fps = self.filter_camera_fps(time.perf_counter(), (1 / (time.perf_counter() - self.start_camera_timer)))
             self.l_camera_fps.setText(f'FPS (камера): {int(filtered_camera_fps)}')
