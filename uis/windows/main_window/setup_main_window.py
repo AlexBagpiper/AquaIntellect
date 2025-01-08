@@ -68,6 +68,10 @@ class SetupMainWindow:
             return self.ui.left_column.sender()
         elif self.left_menu_page_1.sender() != None:
             return self.left_menu_page_1.sender()
+        elif self.left_menu_page_3.sender() != None:
+            return self.left_menu_page_3.sender()
+        elif hasattr(self, 'add_pool_ui') and self.add_pool_ui.sender() != None:
+            return self.add_pool_ui.sender()
         else:
             return self.sender()
 
@@ -257,8 +261,6 @@ class SetupMainWindow:
         self.left_menu_frame_page_1_layout.addWidget(self.left_menu_page_1)
 
         self.left_menu_page_1.add_menus(MainFunctions.update_pools_list(self))
-        self.current_pool = MainFunctions.get_first_pool(self)
-        MainFunctions.set_current_pool(self, self.current_pool['id'])
 
         self.preview_frame = QFrame(self)
         #self.preview_frame.setMaximumSize(600, 600)
@@ -301,6 +303,7 @@ class SetupMainWindow:
         self.l_preview.setStyleSheet(u"QLabel{"
                                      u"background: transparent;}")
         self.l_preview.setGeometry(0, 0, self.width() / 2, self.width() / 2)
+        self.l_preview.hide()
 
         self.l_camera_fps = QLabel()
         self.l_camera_fps.setObjectName(u"l_camera_fps")
@@ -314,24 +317,51 @@ class SetupMainWindow:
                                          u"font-style: normal;"
                                          u"font-weight: 400;}")
 
-        self.view.setMouseTracking(True)
+        self.btn_camera_preview = PyPushButton(
+            btn_id="btn_camera_preview",
+            text="просмотр камеры ",
+            radius=8,
+            color=self.themes["app_color"]["text_foreground"],
+            bg_color=self.themes["app_color"]["dark_one"],
+            bg_color_hover=self.themes["app_color"]["dark_three"],
+            bg_color_pressed=self.themes["app_color"]["dark_four"])
+        self.btn_camera_preview.setMinimumHeight(25)
+        self.btn_camera_preview.setMaximumHeight(25)
+        self.btn_camera_preview.setAttribute(Qt.WA_TranslucentBackground)
+        self.btn_camera_preview.clicked.connect(self.btn_clicked)
+        #self.btn_camera_preview.hide()
+
+        self.wait_progress_camera = PyProgressBox()
+        self.wait_progress_camera.hide()
+
+        #self.view.setMouseTracking(True)
         self.view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
         self.view.setScene(self.scene)
         self.scene.installEventFilter(self)
         self.preview_frame_layout.addWidget(self.view, 0, Qt.AlignHCenter)
+
         self.proxy_wid_preview = QGraphicsProxyWidget()
         self.proxy_wid_preview.setWidget(self.l_preview)
         self.scene.addItem(self.proxy_wid_preview)
-
-        VideoFunctions.setup_video_processing(self)
 
         self.proxy_wid_l_camera_fps = QGraphicsProxyWidget()
         self.proxy_wid_l_camera_fps.setWidget(self.l_camera_fps)
         self.proxy_wid_l_camera_fps.setPos(QPoint(self.scene.sceneRect().width() - self.l_camera_fps.width() - 10, 5))
         self.scene.addItem(self.proxy_wid_l_camera_fps)
 
+        self.proxy_wid_btn_camera_preview = QGraphicsProxyWidget()
+        self.proxy_wid_btn_camera_preview.setWidget(self.btn_camera_preview)
+        self.proxy_wid_btn_camera_preview.setPos(QPoint((self.scene.sceneRect().width() - self.btn_camera_preview.width())/2,
+                                                        (self.scene.sceneRect().height() - self.btn_camera_preview.height())/2))
+        self.scene.addItem(self.proxy_wid_btn_camera_preview)
+
+        self.proxy_wid_wait_progress = QGraphicsProxyWidget()
+        self.proxy_wid_wait_progress.setWidget(self.wait_progress_camera)
+        self.proxy_wid_wait_progress.setPos(QPoint((self.scene.sceneRect().width() - self.wait_progress_camera.width())/2 - 15,
+                                                   (self.scene.sceneRect().height() - self.wait_progress_camera.height())/2 - 5))
+        self.scene.addItem(self.proxy_wid_wait_progress)
 
         # TABLE WIDGETS
         self.sensors_table_widget = PyTableWidget(
@@ -381,6 +411,8 @@ class SetupMainWindow:
             self.sensors_table_widget.setItem(row_number, 0, item)
             self.sensors_table_widget.setItem(row_number, 1, item1)
             self.sensors_table_widget.setRowHeight(row_number, 22)
+
+
 
 
         # PAGE 2
@@ -623,9 +655,9 @@ class SetupMainWindow:
             self.table_widget.setRowHeight(row_number, 22)
 
         # ADD WIDGETS
-        self.ui.load_pages.column_1_layout.addWidget(self.left_menu_frame_page_1)
-        self.ui.load_pages.column_2_layout.addWidget(self.preview_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
-        self.ui.load_pages.column_3_layout.addWidget(self.sensors_table_widget)
+        self.ui.load_pages.column_1_layout_page_1.addWidget(self.left_menu_frame_page_1)
+        self.ui.load_pages.column_2_layout_page_1.addWidget(self.preview_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.ui.load_pages.column_3_layout_page_1.addWidget(self.sensors_table_widget)
         '''self.ui.load_pages.column_3_layout.addWidget(self.circular_progress_1)
         self.ui.load_pages.column_3_layout.addWidget(self.circular_progress_2)
         self.ui.load_pages.column_3_layout.addWidget(self.circular_progress_3)
@@ -681,9 +713,58 @@ class SetupMainWindow:
         ))
         self.ui.right_column.btn_2_layout.addWidget(self.right_btn_2)
 
-        # ///////////////////////////////////////////////////////////////
-        # END - EXAMPLE CUSTOM WIDGETS
-        # ///////////////////////////////////////////////////////////////
+        # PAGE 3
+        # ADD FRAME LEFT MENU PAGE 3
+        self.left_menu_frame_page_3 = QFrame(self)
+        self.left_menu_frame_page_3.setMaximumSize(left_menu_minimum + (left_menu_margin * 2), 17280)
+        self.left_menu_frame_page_3.setMinimumSize(left_menu_minimum + (left_menu_margin * 2), 0)
+
+        # LEFT MENU LAYOUT
+        self.left_menu_frame_page_3_layout = QVBoxLayout(self.left_menu_frame_page_3)
+        self.left_menu_frame_page_3_layout.setContentsMargins(left_menu_margin,
+                                                 left_menu_margin,
+                                                 left_menu_margin,
+                                                 left_menu_margin)
+        self.left_menu_frame_page_3_layout.setContentsMargins(0,0,0,0)
+        self.left_menu_frame_page_3_layout.setSpacing(20)
+
+        # ADD LEFT MENU
+        self.left_menu_page_3 = PyLeftMenu1(
+            parent = self.left_menu_frame_page_3,
+            app_parent = self.ui.central_widget, # For tooltip parent
+            dark_one = self.themes["app_color"]["dark_one"],
+            dark_three = self.themes["app_color"]["dark_three"],
+            dark_four = self.themes["app_color"]["dark_four"],
+            bg_one = self.themes["app_color"]["bg_one"],
+            icon_color = self.themes["app_color"]["icon_color"],
+            icon_color_hover = self.themes["app_color"]["icon_hover"],
+            icon_color_pressed = self.themes["app_color"]["icon_pressed"],
+            icon_color_active = self.themes["app_color"]["icon_active"],
+            context_color = self.themes["app_color"]["context_color"],
+            minimum_width = self.settings["left_menu_size"]["minimum"],
+            maximum_width = self.settings["left_menu_size"]["maximum"]
+        )
+        self.left_menu_page_3.bg.setStyleSheet(f"background: {self.themes['app_color']['bg_three']};"
+                                               f"border-radius: 8px;")
+        self.left_menu_page_3.clicked.connect(self.btn_clicked)
+        self.left_menu_frame_page_3_layout.addWidget(self.left_menu_page_3)
+        self.left_menu_page_3.add_menus(MainFunctions.update_pools_list(self, page=3))
+        self.left_menu_page_3.add_menus([{"btn_id" : "page_3__add_pool",
+                                          "is_active": False,
+                                          "is_status_checked": False,
+                                          "text": 'Добавить',
+                                          "place": 'bottom'},
+                                         {"btn_id" : "page_3__delete_pool",
+                                          "is_active": False,
+                                          "is_status_checked": False,
+                                          "text": 'Удалить',
+                                          "place": 'bottom'}])
+        self.content_frame_page_3 = QFrame(self)
+        self.content_frame_page_3_layout = QVBoxLayout(self.content_frame_page_3)
+        self.content_frame_page_3_layout.setContentsMargins(0,0,0,0)
+
+        self.ui.load_pages.column_1_layout_page_3.addWidget(self.left_menu_frame_page_3)
+        self.ui.load_pages.column_2_layout_page_3.addWidget(self.content_frame_page_3)
 
     # RESIZE GRIPS AND CHANGE POSITION
     # Resize or change position when window is resized

@@ -8,6 +8,7 @@ from core.json_settings import Settings
 from uis.windows.main_window.functions_main_window import *
 from uis.windows.main_window.functions_video import *
 from uis.windows.main_window import *
+from uis.windows.second_windows import *
 from widgets import *
 
 # MAIN WINDOW
@@ -24,7 +25,8 @@ class MainWindow(QMainWindow):
 
         # SETUP VALUES
         # ///////////////////////////////////////////////////////////////
-        self.current_pool = {'id': None, 'name': None}
+        self.current_pool_page_1 = {'id': None, 'name': None}
+        self.current_pool_page_3 = {'id': None, 'name': None}
         self.current_camera = None
 
         # LOAD SETTINGS
@@ -35,7 +37,8 @@ class MainWindow(QMainWindow):
         # SETUP MAIN WINDOW
         # ///////////////////////////////////////////////////////////////
         self.hide_grips = True # Show/Hide resize grips
-        SetupMainWindow.setup_gui(self)
+
+        self.setup_starting()
 
         # SHOW MAIN WINDOW
         # ///////////////////////////////////////////////////////////////
@@ -45,14 +48,18 @@ class MainWindow(QMainWindow):
     # Run function when btn is clicked
     # Check funtion by object name / btn_id
     # ///////////////////////////////////////////////////////////////
+    def setup_starting(self):
+        SetupMainWindow.setup_gui(self)
+        self.current_pool_page_1 = MainFunctions.get_first_pool(self)
+        MainFunctions.set_current_pool(self, f"page_1__{self.current_pool_page_1['id']}")
+        self.current_pool_page_3 = MainFunctions.get_first_pool(self)
+        MainFunctions.set_current_pool(self, f"page_3__{self.current_pool_page_3['id']}", page=3)
+        VideoFunctions.setup_video_input(self)
+        VideoFunctions.change_camera(self)
+
     def btn_clicked(self):
         # GET BT CLICKED
         btn = SetupMainWindow.setup_btns(self)
-
-        # Remove Selection If Clicked By "btn_close_left_column"
-        '''if btn.objectName() != "btn_settings":
-            self.ui.left_menu.deselect_all_tab()
-            btn.set_active(False)'''
 
         # LEFT MENU
         # ///////////////////////////////////////////////////////////////
@@ -103,11 +110,33 @@ class MainWindow(QMainWindow):
                     icon_path = Functions.set_svg_icon("icon_settings.svg")
                 )
         
-        if 'pool_' in btn.objectName():
+        if 'page_1__pool_' in btn.objectName():
+            self.l_preview.hide()
+            self.btn_camera_preview.show()
             MainFunctions.set_current_pool(self, btn.objectName())
+            VideoFunctions.change_camera(self)
 
-        if btn.objectName() == "btn_pools":
-            if self.current_pool['id']:
+        if 'page_2__pool_' in btn.objectName():
+            pass
+
+        if 'page_3__pool_' in btn.objectName():
+            pass
+
+        if btn.objectName() == 'page_3__add_pool':
+            self.add_pool_ui = UI_AddPool(self)
+            self.add_pool_ui.clicked.connect(self.btn_clicked)
+            self.add_pool_ui.show()
+
+        if btn.objectName() == 'pbtn_add_pool':
+            data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
+                                                 table='pools')
+            if data[0] and data[1]:
+                self.left_menu_page_1.add_menus(MainFunctions.get_add_menu_parameters(self, data[1][-1]['pool_id']))
+                self.left_menu_page_3.add_menus(MainFunctions.get_add_menu_parameters(self, data[1][-1]['pool_id'], page=3))
+
+
+        if btn.objectName() == 'page_3__delete_pool':
+            if self.current_pool_page_3['id']:
                 msg = PyMessageBox(self,
                                    mode='question',
                                    text_message='Вы действительно хотите удалить запись?',
@@ -116,7 +145,7 @@ class MainWindow(QMainWindow):
                                    pos_mode='center',
                                    animation=None,
                                    sound='notify_messaging.wav')
-                msg.yes.connect(lambda: MainFunctions.delete_pool(self, self.current_pool['id']))
+                msg.yes.connect(lambda: MainFunctions.delete_pool(self, self.current_pool_page_3['id']))
                 msg.l_message.setWordWrap(False)
                 msg.show()
             else:
@@ -129,6 +158,15 @@ class MainWindow(QMainWindow):
                                    sound='notify_messaging.wav')
                 msg.l_message.setWordWrap(False)
                 msg.show()
+
+        if btn.objectName() == "btn_pools":
+            MainFunctions.set_page(self, self.ui.load_pages.page_3)
+
+
+        if btn.objectName() == "btn_camera_preview":
+            self.l_preview.clear()
+            self.l_preview.show()
+            self.camera_connect_thread.cam_connect()
 
         # DEBUG
         print(f"Button {btn.objectName()}, clicked!")
@@ -150,16 +188,16 @@ class MainWindow(QMainWindow):
         SetupMainWindow.resize_grips(self)
 
     def closeEvent(self, event):
-        VideoFunctions.stop_video_processing_thread(self)
-        if self.camera and self.camera.isOpened():
-            self.camera.release()
+        VideoFunctions.stop_video_processing_threads(self)
+        self.camera_thread.terminate()
+        self.camera_connect_thread.terminate()
         event.accept()
 
     # MOUSE CLICK EVENTS
     # ///////////////////////////////////////////////////////////////
     def mousePressEvent(self, event):
         # SET DRAG POS WINDOW
-        self.dragPos = event.globalPos()
+        self.dragPos = event.globalPosition().toPoint()
 
 
     '''def paintEvent(self, event):
@@ -182,7 +220,7 @@ class MainWindow(QMainWindow):
 # Set the initial class and also additional parameters of the "QApplication" class
 # ///////////////////////////////////////////////////////////////
 if __name__ == "__main__":
-    # APPLICATION
+    '''# APPLICATION
     # ///////////////////////////////////////////////////////////////
     app = QApplication(sys.argv)
     app.setWindowIcon(QIcon("icon.ico"))
@@ -190,4 +228,14 @@ if __name__ == "__main__":
 
     # EXEC APP
     # ///////////////////////////////////////////////////////////////
-    sys.exit(app.exec())
+    sys.exit(app.exec())'''
+
+    app = qasync.QApplication(sys.argv)
+    app.setWindowIcon(QIcon("icon.ico"))
+    event_loop = qasync.QEventLoop(app)
+    asyncio.set_event_loop(event_loop)
+    app_close_event = asyncio.Event()
+    app.aboutToQuit.connect(app_close_event.set)
+    window = MainWindow()
+    with event_loop:
+        event_loop.run_until_complete(app_close_event.wait())

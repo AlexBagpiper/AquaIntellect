@@ -57,3 +57,11 @@ from . py_table_widget import PyTableWidget
 # PY MESSAGE BOX
 # ///////////////////////////////////////////////////////////////
 from . py_message_box import PyMessageBox
+
+# PY PROGRESS BOX
+# ///////////////////////////////////////////////////////////////
+from . py_progress_box import PyProgressBox
+
+# PY PLAIN TEXT EDIT
+# ///////////////////////////////////////////////////////////////
+from . py_plain_text_edit import PyPlainTextEdit

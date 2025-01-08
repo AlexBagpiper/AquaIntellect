@@ -147,7 +147,8 @@ class PyLeftMenu1(QWidget):
     # ///////////////////////////////////////////////////////////////
     def btn_clicked(self):
         self.clicked.emit(self.menu)
-        self.select_only_one(self.sender().objectName())
+        if self.sender().place() == 'top':
+            self.select_only_one(self.sender().objectName())
 
     # SELECT ONLY ONE BTN
     # ///////////////////////////////////////////////////////////////

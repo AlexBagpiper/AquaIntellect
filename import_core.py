@@ -23,7 +23,8 @@ os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 # ADJUST QT FONT DPI FOR HIGHT SCALE AN 4K MONITOR
 # ///////////////////////////////////////////////////////////////
 os.environ["QT_FONT_DPI"] = "96"
-# IF IS 4K MONITOR ENABLE 'os.environ["QT_SCALE_FACTOR"] = "2"'
+
+
 
 import sys
 import threading
@@ -45,9 +46,10 @@ import cv2
 import numpy as np
 import itertools
 from operator import itemgetter, attrgetter, methodcaller
-from collections import Iterable
+from collections.abc import Iterable
 import math
 #from scipy.signal import savgol_filter, find_peaks, butter, filtfilt, sosfilt
+import scipy.stats as ScipyStats
 
 #import psutil
 import shutil
@@ -62,6 +64,7 @@ import socket
 #import requests
 import json
 import asyncio
+import qasync
 #import httpx
 import http.client
 import mimetypes
@@ -70,8 +73,9 @@ from codecs import encode
 from pathlib import Path
 from configparser import ConfigParser
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
+from ultralytics import YOLO
 
 #from PySide6 import QtGui, QtCore
 #print(dir(QtCore))

@@ -50,7 +50,8 @@ class PyLineEdit(QLineEdit):
         selection_color = "#FFF",
         bg_color = "#333",
         bg_color_active = "#222",
-        context_color = "#00ABE8"
+        context_color = "#00ABE8",
+        reg_line = ''
     ):
         super().__init__()
 
@@ -59,6 +60,8 @@ class PyLineEdit(QLineEdit):
             self.setText(text)
         if place_holder_text:
             self.setPlaceholderText(place_holder_text)
+        if reg_line:
+            self.setValidator(QRegularExpressionValidator(QRegularExpression(reg_line), self))
 
         # SET STYLESHEET
         self.set_stylesheet(

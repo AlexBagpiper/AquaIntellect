@@ -125,42 +125,62 @@ class MainFunctions():
         self.group.addAnimation(self.right_box)
         self.group.start()
 
-    def update_pools_list(self):
+    def update_pools_list(self, page=1):
         data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
                                                    table='pools')
         if data[0] and data[1]:
-            return [{"btn_id" : item['pool_id'],
+            return [{"btn_id" : f"page_{page}__{item['pool_id']}",
                      "is_active": False,
                      "is_status_checked": False,
                      "text": item['pool_name']} for item in data[1]]
         else: return []
 
+    def get_add_menu_parameters(self, pool_id, page=1):
+        data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
+                                             table='pools',
+                                             where='pool_id',
+                                             value=pool_id)
+        if data[0] and data[1]:
+            return [{"btn_id" : f"page_{page}__{ data[1][0]['pool_id']}",
+                     "is_active": False,
+                     "is_status_checked": False,
+                     "text": data[1][0]['pool_name']}]
+        else: return []
+
     def get_first_pool(self):
         data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
                                                    table='pools')
-
         if data[0] and data[1]:
             return {"id" : data[1][0]['pool_id'],
                     "text": data[1][0]['pool_name']}
         else: return {"id" : None,
                       "text": None}
 
-    def set_current_pool(self, btn_id: str):
+    def set_current_pool(self, btn_id: str, page=1):
         if btn_id:
             data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
                                                        table='pools',
                                                        where='pool_id',
-                                                       value=btn_id)
+                                                       value=btn_id.split('__')[-1])
 
             if data[0] and data[1]:
-                self.current_pool.update({"id" : data[1][0]['pool_id'],
-                                          "text": data[1][0]['pool_name']})
-                self.left_menu_page_1.select_only_one(self.current_pool['id'])
+                if page == 1:
+                    self.current_pool_page_1.update({"id" : data[1][0]['pool_id'],
+                                              "text": data[1][0]['pool_name']})
+                    self.left_menu_page_1.select_only_one(btn_id)
+                elif page == 2:
+                    pass
+                elif page == 3:
+                    self.current_pool_page_3.update({"id" : data[1][0]['pool_id'],
+                                                     "text": data[1][0]['pool_name']})
+                    self.left_menu_page_3.select_only_one(btn_id)
                 return True
         else: return False
 
-    def get_current_pool(self):
-        return self.current_pool
+    def get_current_pool(self, page=1):
+        if page == 1: return self.current_pool_page_1
+        elif page == 2: pass
+        elif page == 3: return self.current_pool_page_3
 
     def delete_pool(self, id: str):
         try:
@@ -170,10 +190,14 @@ class MainFunctions():
                                                      where='pool_id',
                                                      value=id)
                 if data[0]:
-                    self.left_menu_page_1.delete_menu(id)
-                    if id == self.current_pool['id']:
-                        self.current_pool.update(MainFunctions.get_first_pool(self))
-                        MainFunctions.set_current_pool(self,self.current_pool['id'])
+                    self.left_menu_page_1.delete_menu(f'page_1__{id}')
+                    if id == self.current_pool_page_1['id']:
+                        self.current_pool_page_1.update(MainFunctions.get_first_pool(self))
+                        MainFunctions.set_current_pool(self, self.current_pool_page_1['id'])
+                    self.left_menu_page_3.delete_menu(f'page_3__{id}')
+                    if id == self.current_pool_page_3['id']:
+                        self.current_pool_page_3.update(MainFunctions.get_first_pool(self))
+                        MainFunctions.set_current_pool(self, self.current_pool_page_3['id'], page=3)
                     return True
             else: return False
         except Exception as e:
