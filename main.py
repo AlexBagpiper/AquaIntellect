@@ -168,6 +168,23 @@ class MainWindow(QMainWindow):
             self.l_preview.show()
             self.camera_connect_thread.cam_connect()
 
+        if btn.objectName() == 'pbtn_start_compile_vol_biomass':
+            self.preview_stopped = False
+            while(self.camera_thread.isStreamming):
+                self.preview_stopped = True
+                self.camera_thread.stop_stream()
+            self.camera_connect_thread.cam_disconnect()
+            self.l_preview.clear()
+            self.compile_vol_biomass_ui = UI_CompileVolBiomass(self, self.current_camera, self.current_pool_page_1['id'])
+            self.compile_vol_biomass_ui.clicked.connect(self.btn_clicked)
+            self.compile_vol_biomass_ui.show()
+
+        if btn.objectName() == 'pbtn_exit_compile_vol_biomass':
+            if self.preview_stopped:
+                self.l_preview.show()
+                self.camera_connect_thread.cam_connect()
+            self.preview_stopped = False
+
         # DEBUG
         print(f"Button {btn.objectName()}, clicked!")
 

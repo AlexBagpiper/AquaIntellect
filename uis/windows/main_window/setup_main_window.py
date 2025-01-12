@@ -72,6 +72,8 @@ class SetupMainWindow:
             return self.left_menu_page_3.sender()
         elif hasattr(self, 'add_pool_ui') and self.add_pool_ui.sender() != None:
             return self.add_pool_ui.sender()
+        elif hasattr(self, 'compile_vol_biomass_ui') and self.compile_vol_biomass_ui.sender() != None:
+            return self.compile_vol_biomass_ui.sender()
         else:
             return self.sender()
 
@@ -362,6 +364,25 @@ class SetupMainWindow:
         self.proxy_wid_wait_progress.setPos(QPoint((self.scene.sceneRect().width() - self.wait_progress_camera.width())/2 - 15,
                                                    (self.scene.sceneRect().height() - self.wait_progress_camera.height())/2 - 5))
         self.scene.addItem(self.proxy_wid_wait_progress)
+
+        self.compile_vol_biomass_layout = QHBoxLayout(self)
+        self.compile_vol_biomass_layout.setSpacing(10)
+        self.compile_vol_biomass_layout.setContentsMargins(0,0,0,0)
+
+        # BTN START
+        self.pbtn_start_compile_vol_biomass = PyPushButton(
+            btn_id = 'pbtn_start_compile_vol_biomass',
+            text = "Расчет объема биомассы",
+            radius  = 8,
+            color = self.themes["app_color"]["text_foreground"],
+            bg_color = self.themes["app_color"]["dark_one"],
+            bg_color_hover = self.themes["app_color"]["dark_three"],
+            bg_color_pressed = self.themes["app_color"]["dark_four"]
+        )
+        self.pbtn_start_compile_vol_biomass.setMinimumHeight(30)
+        self.pbtn_start_compile_vol_biomass.setMaximumHeight(30)
+        self.pbtn_start_compile_vol_biomass.clicked.connect(self.btn_clicked)
+        self.compile_vol_biomass_layout.addWidget(self.pbtn_start_compile_vol_biomass)
 
         # TABLE WIDGETS
         self.sensors_table_widget = PyTableWidget(
@@ -657,6 +678,7 @@ class SetupMainWindow:
         # ADD WIDGETS
         self.ui.load_pages.column_1_layout_page_1.addWidget(self.left_menu_frame_page_1)
         self.ui.load_pages.column_2_layout_page_1.addWidget(self.preview_frame, alignment=Qt.AlignHCenter | Qt.AlignTop)
+        self.ui.load_pages.column_3_layout_page_1.addLayout(self.compile_vol_biomass_layout)
         self.ui.load_pages.column_3_layout_page_1.addWidget(self.sensors_table_widget)
         '''self.ui.load_pages.column_3_layout.addWidget(self.circular_progress_1)
         self.ui.load_pages.column_3_layout.addWidget(self.circular_progress_2)

@@ -67,8 +67,8 @@ class CameraConnectThread(QThread):
                 if self.cap_camera.isOpened():
                     self.camera.emit(self.cap_camera)
                     self.connect_flag.emit('end_connect')
-
                 else: self.connect_flag.emit('error_connect')
+            else: self.connect_flag.emit('error_connect')
         except Exception as e:
             self.connect_flag.emit('error_connect')
 
@@ -177,6 +177,7 @@ class FrameProcessThread(QThread):
         self.frame = None
         self.arr_data = np.array([], dtype=int)
         self.param_dict = {'max_pdf': 0, 'arr_data_size': 0, 'data_min': 0, 'data_max': 0}
+        self.model = YOLO(f"{MODELS_PATH}\\{parent.settings['segmentation_model_default']}")
 
     def run(self):
         gray_image = cv2.cvtColor(self.frame, cv2.COLOR_RGB2GRAY)

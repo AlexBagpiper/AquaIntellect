@@ -1,6 +1,6 @@
 {
     "app_name": "AquaIntellect",
-    "version" : "v0.3",
+    "version" : "v0.4",
     "copyright" : "Передовая инженерная школа ДВФУ",
     "year" : 2025,
     "theme_name" : "default",
@@ -25,6 +25,10 @@
         600,
         600
     ],
+    "compile_vol_biomass_size": [
+        800,
+        500
+    ],
     "left_menu_content_margins" : 3,
     "left_column_size" : {
         "minimum" : 0,
@@ -40,6 +44,20 @@
         "title_size" : 10,
         "text_size" : 9
     },
-    "timer_image_grab": 1.0,
-    "num_data_to_compile_S": 2000
+    "timer_image_grab": 0.33,
+    "num_data_to_compile_S": 2000,
+    "segmentation_model": {
+        "default": {
+            "source": "best_0.pt",
+            "conf": 0.5,
+            "verbose": false,
+            "augment": false,
+            "device": "0"
+        },
+        "source": "best_0.pt",
+        "conf": 0.5,
+        "verbose": false,
+        "augment": false,
+        "device": "0"
+    }
 }

@@ -76,6 +76,7 @@ from configparser import ConfigParser
 import matplotlib.pyplot as plt
 
 from ultralytics import YOLO
+import scipy.stats as st
 
 #from PySide6 import QtGui, QtCore
 #print(dir(QtCore))

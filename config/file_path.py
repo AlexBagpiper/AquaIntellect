@@ -11,6 +11,7 @@ path.read(Path(Path.cwd(), 'config', 'file_path.cfg'))
 if DEBUG:
     APP_PATH = Path.cwd()
     IMAGES_PATH = Path(Path.cwd(), path.get('MAIN_DIR', 'Images'))
+    MODELS_PATH = Path(Path.cwd(), path.get('MAIN_DIR', 'Models'))
     SOUNDS_PATH = Path(Path.cwd(), path.get('MAIN_DIR', 'Sounds'))
     THEMES_PATH = Path(Path.cwd(), path.get('MAIN_DIR', 'Themes'))
     TEMPLATES_PATH = Path(Path.cwd(), path.get('MAIN_DIR', 'Templates'))
@@ -26,6 +27,7 @@ if DEBUG:
 else:
     APP_PATH = Path.cwd()
     IMAGES_PATH = Path(os.environ['ALLUSERSPROFILE'], path.get('MAIN_DIR', 'MainDir'), path.get('MAIN_DIR', 'Images'))
+    MODELS_PATH = Path(os.environ['ALLUSERSPROFILE'], path.get('MAIN_DIR', 'MainDir'), path.get('MAIN_DIR', 'Models'))
     SOUNDS_PATH = Path(os.environ['ALLUSERSPROFILE'], path.get('MAIN_DIR', 'MainDir'), path.get('MAIN_DIR', 'Sounds'))
     THEMES_PATH = Path(os.environ['ALLUSERSPROFILE'], path.get('MAIN_DIR', 'MainDir'), path.get('MAIN_DIR', 'Themes'))
 
