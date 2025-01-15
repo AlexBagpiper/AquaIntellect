@@ -24,7 +24,7 @@ style = '''
 QPushButton {{
     text-align:center;
 	border: none;
-    padding-left: 10px;
+    padding-left: 5px;
     padding-right: 5px;
     color: {_color};
 	border-radius: {_radius};	

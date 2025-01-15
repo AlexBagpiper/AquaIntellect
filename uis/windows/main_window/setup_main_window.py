@@ -186,6 +186,7 @@ class SetupMainWindow:
 
         # SETTINGS BTN 2
         self.btn_sensors = PyPushButton(
+            btn_id='btn_sensors',
             text="Датчики",
             radius=8,
             color=self.themes["app_color"]["text_foreground"],
@@ -202,6 +203,7 @@ class SetupMainWindow:
 
         # SETTINGS BTN 3
         self.btn_logging = PyPushButton(
+            btn_id='btn_logging',
             text="Логирование",
             radius=8,
             color=self.themes["app_color"]["text_foreground"],

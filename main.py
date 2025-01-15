@@ -162,6 +162,16 @@ class MainWindow(QMainWindow):
         if btn.objectName() == "btn_pools":
             MainFunctions.set_page(self, self.ui.load_pages.page_3)
 
+        if btn.objectName() == "btn_sensors":
+            while(self.camera_thread.isStreamming):
+                self.preview_stopped = True
+                self.camera_thread.stop_stream()
+            self.camera_connect_thread.cam_disconnect()
+            self.l_preview.clear()
+            self.camera_calibrate_ui = UI_CameraCalibrate(self, self.current_camera)
+            self.camera_calibrate_ui.clicked.connect(self.btn_clicked)
+            self.camera_calibrate_ui.show()
+
 
         if btn.objectName() == "btn_camera_preview":
             self.l_preview.clear()
