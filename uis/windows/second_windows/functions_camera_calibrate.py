@@ -132,26 +132,6 @@ class CameraCalibrateFunctions():
     def __init__(self):
         super().__init__()
 
-        '''images = []
-
-        for filename in images:
-            image = cv2.imread(filename)
-            grayColor = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            ret, corners = cv2.findChessboardCorners(grayColor,
-                                                     self.CHECKERBOARD,
-                                                     cv2.CALIB_CB_ADAPTIVE_THRESH + cv2.CALIB_CB_FAST_CHECK + cv2.CALIB_CB_NORMALIZE_IMAGE)
-
-
-            ret, matrix, distortion, r_vecs, t_vecs = cv2.calibrateCamera(self.threedpoints, self.twodpoints, grayColor.shape[::-1], None, None)
-
-            h, w = image.shape[:2]
-            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(matrix, distortion, (w, h), 1, (w, h))
-            dst = cv2.undistort(image, matrix, distortion, None, newcameramtx)
-
-            x, y, w, h = roi
-            dst = dst[y:y+h, x:x+w]
-            cv2.imwrite('calibrated_image.jpg', dst)'''
-
     def set_chessboard_size(self, size):
         self.CHECKERBOARD = (size[0], size[1])
         self.objectp3d = np.zeros((1, self.CHECKERBOARD[0] * self.CHECKERBOARD[1], 3), np.float32)
@@ -259,7 +239,8 @@ class CameraCalibrateFunctions():
         if not self.camera_thread.isStreamming: self.camera_thread.start_stream()
 
     def save(self):
-        self.current_camera.update({'calib_params': json.dumps(self.calib_params)})
+        self.save.emit(self.calib_params)
+        '''self.current_camera.update({'calib_params': json.dumps(self.calib_params)})
         column_list = [x for x in self.current_camera.keys()]
         value_list = [x for x in self.current_camera.values()]
         data = DatabaseFunctions.update_data(database=COMMON_DATABASE_PATH,
@@ -267,7 +248,7 @@ class CameraCalibrateFunctions():
                                              column_list=column_list,
                                              value_list=value_list,
                                              where_column='camera_id',
-                                             where_value=self.current_camera['camera_id'])
+                                             where_value=self.current_camera['camera_id'])'''
         CameraCalibrateFunctions.reset(self)
 
     def setup_video_input(self):

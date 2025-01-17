@@ -134,6 +134,13 @@ class PyLeftMenu1(QWidget):
                     child.setParent(None)
                     child._deleteLater()
 
+    def update_menu_name(self, btn_id, name):
+        children = self.findChildren(PyLeftMenuButton)
+        if children:
+            for child in children:
+                if child.btn_id() == btn_id:
+                    child._text = name
+
     def top_menus_count(self):
         count = 0
         children = self.findChildren(PyLeftMenuButton)

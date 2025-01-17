@@ -334,14 +334,8 @@ class VideoFunctions():
             self.camera_thread.stream = self.camera
             self.camera_thread.start_stream()
 
-        def camera_disconnect_camera(camera):
-            pass
-
         def camera_thread_rawFrame(frame):
             VideoFunctions.update_camera_thread(self, frame)
-
-        def video_write_thread_status(writer_complete):
-            VideoFunctions.video_write_thread_status(self, writer_complete)
 
         self.camera_connect_thread = CameraConnectThread()
         self.camera_connect_thread.connect_flag.connect(camera_connect_connect_flag)

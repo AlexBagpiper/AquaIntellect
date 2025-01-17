@@ -1,6 +1,6 @@
 {
     "app_name": "AquaIntellect",
-    "version" : "v0.5",
+    "version" : "v0.6",
     "copyright" : "Передовая инженерная школа ДВФУ",
     "year" : 2025,
     "theme_name" : "default",
@@ -36,6 +36,10 @@
     "preview_calibrate_camera_size": [
         900,
         450
+    ],
+    "preview_roi_camera_size": [
+        800,
+        850
     ],
     "left_menu_content_margins" : 3,
     "left_column_size" : {

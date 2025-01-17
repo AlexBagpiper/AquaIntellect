@@ -120,12 +120,33 @@ class MainWindow(QMainWindow):
             pass
 
         if 'page_3__pool_' in btn.objectName():
-            pass
+            MainFunctions.set_current_pool(self, btn.objectName(), page=3)
 
         if btn.objectName() == 'page_3__add_pool':
             self.add_pool_ui = UI_AddPool(self)
             self.add_pool_ui.clicked.connect(self.btn_clicked)
             self.add_pool_ui.show()
+
+        if btn.objectName() == 'page_3__edit_pool':
+            if self.current_pool_page_3:
+                data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
+                                                 table='cameras',
+                                                 where='pool_id',
+                                                 value=self.current_pool_page_3['id'])
+                if data[0] and data[1]:
+                    self.add_pool_ui = UI_AddPool(self, 'edit', data[1][0])
+                    self.add_pool_ui.clicked.connect(self.btn_clicked)
+                    self.add_pool_ui.show()
+            else:
+                msg = PyMessageBox(self,
+                                   mode='information',
+                                   text_message='Нет записей для редактирования!',
+                                   button_yes_text='Ok',
+                                   pos_mode='center',
+                                   animation=None,
+                                   sound='notify_messaging.wav')
+                msg.l_message.setWordWrap(False)
+                msg.show()
 
         if btn.objectName() == 'pbtn_add_pool':
             data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
@@ -133,6 +154,16 @@ class MainWindow(QMainWindow):
             if data[0] and data[1]:
                 self.left_menu_page_1.add_menus(MainFunctions.get_add_menu_parameters(self, data[1][-1]['pool_id']))
                 self.left_menu_page_3.add_menus(MainFunctions.get_add_menu_parameters(self, data[1][-1]['pool_id'], page=3))
+
+        if btn.objectName() == 'pbtn_edit_pool':
+            VideoFunctions.change_camera(self)
+            data = DatabaseFunctions.select_data(database=COMMON_DATABASE_PATH,
+                                                 table='pools',
+                                                 where='pool_id',
+                                                 value=self.current_pool_page_3['id'])
+            self.current_pool_page_3.update({"text": data[1][0]['pool_name']})
+            self.left_menu_page_1.update_menu_name(f"page_1__{self.current_pool_page_3['id']}", self.current_pool_page_3['text'])
+            self.left_menu_page_3.update_menu_name(f"page_3__{self.current_pool_page_3['id']}", self.current_pool_page_3['text'])
 
 
         if btn.objectName() == 'page_3__delete_pool':
@@ -163,15 +194,7 @@ class MainWindow(QMainWindow):
             MainFunctions.set_page(self, self.ui.load_pages.page_3)
 
         if btn.objectName() == "btn_sensors":
-            while(self.camera_thread.isStreamming):
-                self.preview_stopped = True
-                self.camera_thread.stop_stream()
-            self.camera_connect_thread.cam_disconnect()
-            self.l_preview.clear()
-            self.camera_calibrate_ui = UI_CameraCalibrate(self, self.current_camera)
-            self.camera_calibrate_ui.clicked.connect(self.btn_clicked)
-            self.camera_calibrate_ui.show()
-
+            pass
 
         if btn.objectName() == "btn_camera_preview":
             self.l_preview.clear()

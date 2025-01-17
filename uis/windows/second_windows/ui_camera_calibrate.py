@@ -39,6 +39,7 @@ STYLE_VALUE_LABEL = '''
 
 class UI_CameraCalibrate(QWidget):
     clicked = Signal(object)
+    save = Signal(dict)
 
     def __init__(self, parent = None, current_camera=None):
         QWidget.__init__(self)

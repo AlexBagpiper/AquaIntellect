@@ -189,6 +189,10 @@ class MainFunctions():
                                                      table='pools',
                                                      where='pool_id',
                                                      value=id)
+                data1 = DatabaseFunctions.delete_data(database=COMMON_DATABASE_PATH,
+                                                     table='cameras',
+                                                     where='pool_id',
+                                                     value=id)
                 if data[0]:
                     self.left_menu_page_1.delete_menu(f'page_1__{id}')
                     if id == self.current_pool_page_1['id']:

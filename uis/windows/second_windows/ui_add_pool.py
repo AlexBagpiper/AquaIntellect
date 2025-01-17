@@ -11,6 +11,8 @@ from core.json_themes import Themes
 from widgets import *
 
 from . functions_add_pool import *
+from . ui_camera_calibrate import *
+from . ui_preview_roi import *
 
 STYLE_FIELD_LABEL = '''
     QLabel {
@@ -23,20 +25,20 @@ STYLE_FIELD_LABEL = '''
     }
     '''
 
-
 class UI_AddPool(QWidget):
     clicked = Signal(object)
 
-    def __init__(self, parent = None):
+    def __init__(self, parent = None, mode = 'add', camera = None):
         QWidget.__init__(self)
 
         self.setObjectName(u"AddPoolWindow")
         self.parent = parent
+        self.mode = mode
         self.setParent(parent)
         self.setWindowModality(Qt.WindowModal)
 
-
-        self.staff_id = None
+        self.current_camera = camera
+        self.calib_params = ''
 
         settings = Settings()
         self.settings = settings.items
@@ -219,6 +221,57 @@ class UI_AddPool(QWidget):
         )
         self.ledit_video_source.setMinimumHeight(30)
 
+        self.l_calib = QLabel()
+        self.l_calib.setText(QCoreApplication.translate("Label", u"Калибровка камеры", None))
+        self.l_calib.setMinimumHeight(20)
+        self.l_calib.setAlignment(Qt.AlignBottom)
+        self.l_calib.setStyleSheet(STYLE_FIELD_LABEL)
+
+        self.l_calib_en = QLabel()
+        self.l_calib_en.setText(QCoreApplication.translate("Label", u"Активировать калибровку камеры", None))
+        self.l_calib_en.setMinimumHeight(20)
+        self.l_calib_en.setAlignment(Qt.AlignCenter)
+        self.l_calib_en.setStyleSheet(STYLE_FIELD_LABEL)
+
+        self.l_calib_status = QLabel()
+        self.l_calib_status.setMinimumHeight(20)
+        self.l_calib_status.setAlignment(Qt.AlignCenter)
+
+        # BTN PREVIEW
+        self.pbtn_calib = PyPushButton(
+            btn_id = 'pbtn_calib',
+            text = "Калибровка",
+            radius  = 8,
+            color = self.themes["app_color"]["text_foreground"],
+            bg_color = self.themes["app_color"]["dark_one"],
+            bg_color_hover = self.themes["app_color"]["dark_three"],
+            bg_color_pressed = self.themes["app_color"]["dark_four"]
+        )
+        self.pbtn_calib.setMinimumHeight(30)
+        self.pbtn_calib.setMaximumHeight(30)
+        self.pbtn_calib.setMinimumWidth(100)
+        self.pbtn_calib.clicked.connect(self.btn_clicked)
+
+        # TOGGLE CALIB ENABLE BUTTON
+        self.tbtn_calib_en = PyToggle(
+            width = 50,
+            bg_color = self.themes["app_color"]["dark_two"],
+            circle_color = self.themes["app_color"]["icon_color"],
+            active_color = self.themes["app_color"]["context_color"]
+        )
+        self.tbtn_calib_en.stateChanged.connect(self.btn_clicked)
+
+        self.calib_layout = QHBoxLayout(self.frame_bottom)
+        self.calib_layout.setContentsMargins(0, 0, 0, 0)
+        self.calib_layout.setSpacing(10)
+        self.calib_layout.addWidget(self.pbtn_calib)
+        self.calib_layout.addItem(QSpacerItem(20, 0, QSizePolicy.Fixed, QSizePolicy.Fixed))
+        self.calib_layout.addWidget(self.l_calib_status)
+        self.calib_layout.addItem(QSpacerItem(20, 0, QSizePolicy.Expanding, QSizePolicy.Fixed))
+        self.calib_layout.addWidget(self.l_calib_en)
+        self.calib_layout.addWidget(self.tbtn_calib_en)
+
+
         #ADD ROI X
         self.ledit_roi_x = PyLineEdit(
             text = "",
@@ -279,19 +332,50 @@ class UI_AddPool(QWidget):
         )
         self.ledit_roi_h.setMinimumHeight(30)
 
-        # BTN ADD
-        self.pbtn_add = PyPushButton(
-            btn_id = 'pbtn_add_pool',
-            text = "Добавить",
+        # BTN PREVIEW
+        self.pbtn_preview = PyPushButton(
+            btn_id = 'pbtn_preview',
+            text = "Просмотр",
             radius  = 8,
             color = self.themes["app_color"]["text_foreground"],
             bg_color = self.themes["app_color"]["dark_one"],
             bg_color_hover = self.themes["app_color"]["dark_three"],
             bg_color_pressed = self.themes["app_color"]["dark_four"]
         )
-        self.pbtn_add.setMinimumHeight(30)
-        self.pbtn_add.setMaximumHeight(30)
-        self.pbtn_add.clicked.connect(self.btn_clicked)
+        self.pbtn_preview.setMinimumHeight(30)
+        self.pbtn_preview.setMaximumHeight(30)
+        self.pbtn_preview.setMinimumWidth(120)
+        self.pbtn_preview.clicked.connect(self.btn_clicked)
+
+        if self.mode == 'add':
+            # BTN ADD
+            self.pbtn_add = PyPushButton(
+                btn_id = 'pbtn_add_pool',
+                text = "Добавить",
+                radius  = 8,
+                color = self.themes["app_color"]["text_foreground"],
+                bg_color = self.themes["app_color"]["dark_one"],
+                bg_color_hover = self.themes["app_color"]["dark_three"],
+                bg_color_pressed = self.themes["app_color"]["dark_four"]
+            )
+            self.pbtn_add.setMinimumHeight(30)
+            self.pbtn_add.setMaximumHeight(30)
+            self.pbtn_add.clicked.connect(self.btn_clicked)
+
+        if self.mode == 'edit':
+            # BTN EDIT
+            self.pbtn_edit = PyPushButton(
+                btn_id = 'pbtn_edit_pool',
+                text = "Сохранить",
+                radius  = 8,
+                color = self.themes["app_color"]["text_foreground"],
+                bg_color = self.themes["app_color"]["dark_one"],
+                bg_color_hover = self.themes["app_color"]["dark_three"],
+                bg_color_pressed = self.themes["app_color"]["dark_four"]
+            )
+            self.pbtn_edit.setMinimumHeight(30)
+            self.pbtn_edit.setMaximumHeight(30)
+            self.pbtn_edit.clicked.connect(self.btn_clicked)
 
         self.roi_layout = QHBoxLayout(self.frame_bottom)
         self.roi_layout.setContentsMargins(0, 0, 0, 0)
@@ -300,6 +384,8 @@ class UI_AddPool(QWidget):
         self.roi_layout.addWidget(self.ledit_roi_y)
         self.roi_layout.addWidget(self.ledit_roi_w)
         self.roi_layout.addWidget(self.ledit_roi_h)
+        self.roi_layout.addItem(QSpacerItem(20, 0, QSizePolicy.Fixed, QSizePolicy.Fixed))
+        self.roi_layout.addWidget(self.pbtn_preview)
 
         # BTN EXIT
         self.pbtn_exit = PyPushButton(
@@ -318,9 +404,11 @@ class UI_AddPool(QWidget):
         self.btn_layout = QHBoxLayout()
         self.btn_layout.setContentsMargins(0,0,0,0)
         self.btn_layout.setSpacing(10)
-        self.btn_layout.addWidget(self.pbtn_add)
+        if self.mode == 'add':
+            self.btn_layout.addWidget(self.pbtn_add)
+        elif self.mode == 'edit':
+            self.btn_layout.addWidget(self.pbtn_edit)
         self.btn_layout.addWidget(self.pbtn_exit)
-
 
         self.frame_bottom_layout.addWidget(self.l_name)
         self.frame_bottom_layout.addWidget(self.ledit_name)
@@ -333,10 +421,17 @@ class UI_AddPool(QWidget):
         self.frame_bottom_layout.addWidget(self.ledit_name_video_source)
         self.frame_bottom_layout.addWidget(self.l_video_source)
         self.frame_bottom_layout.addWidget(self.ledit_video_source)
+        self.frame_bottom_layout.addWidget(self.l_calib)
+        self.frame_bottom_layout.addLayout(self.calib_layout)
         self.frame_bottom_layout.addWidget(self.l_roi)
         self.frame_bottom_layout.addLayout(self.roi_layout)
         self.frame_bottom_layout.addItem(QSpacerItem(0, 20, QSizePolicy.Minimum, QSizePolicy.Fixed))
         self.frame_bottom_layout.addLayout(self.btn_layout)
+
+        if self.mode == 'edit':
+            AddPoolFunctions.fill_edit_data(self)
+
+        AddPoolFunctions.update_calib_status(self)
 
 
     def paintEvent(self, event):
@@ -348,12 +443,42 @@ class UI_AddPool(QWidget):
 
 
     def btn_clicked(self):
+        def save_signal(params):
+            AddPoolFunctions.update_calib_params(self, params)
+
         if self.sender().objectName() == 'pbtn_exit':
                 self.close()
         if self.sender().objectName() == 'pbtn_add_pool':
             if AddPoolFunctions.add_pool(self):
                 self.clicked.emit(self.sender())
                 self.close()
+        if self.sender().objectName() == 'pbtn_edit_pool':
+            if AddPoolFunctions.edit_pool(self):
+                self.clicked.emit(self.sender())
+                self.close()
+        if self.sender().objectName() == 'pbtn_calib':
+            while(self.parent.camera_thread.isStreamming):
+                self.parent.preview_stopped = True
+                self.parent.camera_thread.stop_stream()
+            self.parent.camera_connect_thread.cam_disconnect()
+            self.parent.l_preview.clear()
+            if self.mode == 'add':
+                self.camera_calibrate_ui = UI_CameraCalibrate(self, {'camera_address': self.ledit_video_source.text(), 'camera_roi': ''})
+            elif self.mode == 'edit':
+                self.camera_calibrate_ui = UI_CameraCalibrate(self, self.current_camera)
+            self.camera_calibrate_ui.clicked.connect(self.btn_clicked)
+            self.camera_calibrate_ui.save.connect(save_signal)
+            self.camera_calibrate_ui.show()
+        if self.sender().objectName() == 'pbtn_preview':
+            camera_roi = ''
+            if self.ledit_roi_x.text() and self.ledit_roi_y.text() and self.ledit_roi_w.text() and self.ledit_roi_h.text():
+                camera_roi = json.dumps({"x": int(self.ledit_roi_x.text()),
+                                         "y": int(self.ledit_roi_y.text()),
+                                         "w": int(self.ledit_roi_w.text()),
+                                         "h": int(self.ledit_roi_h.text())})
+            self.preview_roi_ui = UI_PreviewRoi(self, {'camera_address': self.ledit_video_source.text(), 'calib_params': self.calib_params, 'camera_roi': camera_roi}, self.tbtn_calib_en.isChecked())
+            self.preview_roi_ui.clicked.connect(self.btn_clicked)
+            self.preview_roi_ui.show()
 
 
 

@@ -621,13 +621,7 @@ class SetupMainWindow:
         )
         self.line_edit.setMinimumHeight(30)
 
-        # TOGGLE BUTTON
-        self.toggle_button = PyToggle(
-            width = 50,
-            bg_color = self.themes["app_color"]["dark_two"],
-            circle_color = self.themes["app_color"]["icon_color"],
-            active_color = self.themes["app_color"]["context_color"]
-        )
+
 
         # TABLE WIDGETS
         self.table_widget = PyTableWidget(
@@ -777,6 +771,11 @@ class SetupMainWindow:
                                           "is_active": False,
                                           "is_status_checked": False,
                                           "text": 'Добавить',
+                                          "place": 'bottom'},
+                                         {"btn_id" : "page_3__edit_pool",
+                                          "is_active": False,
+                                          "is_status_checked": False,
+                                          "text": 'Редактировать',
                                           "place": 'bottom'},
                                          {"btn_id" : "page_3__delete_pool",
                                           "is_active": False,
